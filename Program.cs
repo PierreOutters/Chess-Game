@@ -90,7 +90,7 @@ namespace Chess
             }
             return pieces;
         } // Finished
-        static void PrintBoard(char[,] board)
+        static void PrintBoard(char[,] board, List<Pieces> pieces)
         {
             for (int y = 0; y < 8; y++)
             {
@@ -103,56 +103,115 @@ namespace Chess
                     }
                     else
                     {
+                        foreach (Pieces p in pieces)
+                        {
+                            if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && p.ReturnColour() == true)
+                            {
+                                Console.ForegroundColor = ConsoleColor.DarkRed;
+                            }
+                        }
                         Console.Write(" " + board[y, x] + " ");
+                        Console.ForegroundColor = ConsoleColor.White;
                     }
                     Console.Write("|");
                 }
                 Console.WriteLine("\n  ---------------------------------");
             }
             Console.WriteLine("    A   B   C   D   E   F   G   H\n");
-        } // Colours
-        static void RemoveDeadPieces(char[,] board, List<Pieces> pieces)
+        } // Finished
+        static void PrintFlippedBoard(char[,] board, List<Pieces> pieces)
         {
-            for (int i = 0; i < pieces.Count; i++)
+            for (int y = 7; y >= 0; y--)
             {
-                if (!pieces[i].IsAlive())
+                Console.Write((8 - y) + " |");
+                for (int x = 7; x >= 0; x--)
                 {
-                    board[pieces[i].ReturnCoords()[0], pieces[i].ReturnCoords()[1]] = '_';
+                    if (board[y, x] == '_')
+                    {
+                        Console.Write("   ");
+                    }
+                    else
+                    {
+                        foreach (Pieces p in pieces)
+                        {
+                            if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && p.ReturnColour() == true)
+                            {
+                                Console.ForegroundColor = ConsoleColor.DarkRed;
+                            }
+                        }
+                        Console.Write(" " + board[y, x] + " ");
+                        Console.ForegroundColor = ConsoleColor.White;
+                    }
+                    Console.Write("|");
                 }
+                Console.WriteLine("\n  ---------------------------------");
             }
-        } // Useless
+            Console.WriteLine("    H   G   F   E   D   C   B   A\n");
+        } // Finished
         static int[] ProcessMove(char xaxis, char yaxis)
         {
             return new int[] { 8-int.Parse(yaxis.ToString()), (int)xaxis - 65 };
         }  // Finished
-        static char[] BackwardsProcessMove(int yaxis, int xaxis)
+        /*static char[] BackwardsProcessMove(int yaxis, int xaxis)
         {
             return new char[] { (char)(xaxis + 65), char.Parse((8-yaxis).ToString())};
-        } // Useless
-        static bool EnterMove(char[,] board, List<Pieces> pieces)
+        } */ // May help me
+        static bool EnterMove(char[,] board, List<Pieces> pieces, bool colour)
         {
+            if (colour)
+            {
+                Console.WriteLine("Black to move");
+            }
+            else
+            {
+                Console.WriteLine("White to move");
+            }
             Console.WriteLine("Please enter your move");
             string move = Console.ReadLine();
+            if (move.Length != 3)
+            {
+                return false;
+            }
+            else if (!int.TryParse(move[2].ToString(), out int x))
+            {
+                return false;
+            }
             int[] coords = ProcessMove(char.Parse(move[1].ToString().ToUpper()), move[2]);
             if (move[0] == 'p' || move[0] == 'R' || move[0] == 'k' || move[0] == 'B' || move[0] == 'K' || move[0] == 'Q')
             {
-                return MakeWhiteMove(board, pieces, coords, move[0]);
+                return MakeMove(board, pieces, coords, move[0], colour);
             }
             return false;
-        } // Allowing black to play
-        static bool MakeWhiteMove(char[,] board, List<Pieces> pieces, int[] move, char piece)
+        } // Finished
+        static bool MakeMove(char[,] board, List<Pieces> pieces, int[] move, char piece, bool colour)
         {
             for (int i = 0; i < pieces.Count; i++)
             {
-                if (pieces[i].IsAlive() && pieces[i].ReturnColour() == false && pieces[i].ReturnType() == piece)
+                if (pieces[i].IsAlive() && pieces[i].ReturnColour() == colour && pieces[i].ReturnType() == piece)
                 {
                     for (int j = 0; j < pieces[i].AvailablePlaces(board, pieces).Count; j++)
                     {
                         if (pieces[i].AvailablePlaces(board, pieces)[j][0] == move[0] && pieces[i].AvailablePlaces(board, pieces)[j][1] == move[1])
                         {
-                            board[pieces[i].ReturnCoords()[0], pieces[i].ReturnCoords()[1]] = '_';
                             int y = pieces[i].AvailablePlaces(board, pieces)[j][0], x = pieces[i].AvailablePlaces(board, pieces)[j][1];
-                            board[pieces[i].AvailablePlaces(board, pieces)[j][0], pieces[i].AvailablePlaces(board, pieces)[j][1]] = piece;
+                            if (pieces[i].AvailablePlaces(board, pieces)[j].Length == 3)
+                            {
+                                int l = pieces[i].AvailablePlaces(board, pieces)[j][2];
+                                for (int k = 0; k < pieces.Count; k++)
+                                {
+                                    if (pieces[k].ReturnCoords()[0] == l && pieces[k].ReturnCoords()[1] == x)
+                                    {
+                                        board[pieces[k].ReturnCoords()[0], pieces[k].ReturnCoords()[1]] = '_';
+                                        if (k < i)
+                                        {
+                                            i--;
+                                        }
+                                        pieces.RemoveAt(k);
+                                    }
+                                }
+                            }
+                            board[pieces[i].ReturnCoords()[0], pieces[i].ReturnCoords()[1]] = '_';
+                            board[y, x] = piece;
                             if (pieces[i].ReturnType() == 'K' && pieces[i].ReturnCoords()[1] - x == - 2)
                             {
                                 foreach (Pieces p in pieces)
@@ -172,12 +231,22 @@ namespace Chess
                                 {
                                     if (p.ReturnCoords()[1] == 0 && p.ReturnCoords()[0] == pieces[i].ReturnCoords()[0])
                                     {
-                                        Console.WriteLine("Here1"); Console.ReadKey(true);
                                         board[p.ReturnCoords()[0], p.ReturnCoords()[1]] = '_';
                                         board[p.ReturnCoords()[0], 3] = p.ReturnType();
                                         pieces[i].ChangeToCoord(p.ReturnCoords()[0], 3);
                                         p.Moved();
                                     }
+                                }
+                            }
+                            if (pieces[i].ReturnType() == 'p' && !pieces[i].ReturnMoved() && y == 3 || pieces[i].ReturnType() == 'p' && !pieces[i].ReturnMoved() && y == 4)
+                            {
+                                pieces[i].DoubleMoved();
+                            }
+                            else
+                            {
+                                foreach (Pieces p in pieces)
+                                {
+                                    pieces[i].NoDoubleMoved();
                                 }
                             }
                             pieces[i].ChangeToCoord(y, x);
@@ -197,27 +266,73 @@ namespace Chess
                 }
             }
             return false;
-        } // Allowing black to play
+        } // Finished
+        static bool CheckWin(List<Pieces> pieces, bool colour)
+        {
+            foreach (Pieces p in pieces)
+            {
+                if (p.ReturnColour() != colour && p.ReturnType() == 'K')
+                {
+                    return false;
+                }
+            }
+            return true;
+        } // Finished
+        static void EndGame(bool colour)
+        {
+            if (colour)
+            {
+                Console.WriteLine("Black has won the game");
+                Console.ReadKey(true); Environment.Exit(0);
+            }
+            else
+            {
+                Console.WriteLine("White has won the game");
+                Console.ReadKey(true); Environment.Exit(0);
+            }
+        } // Finished
         static void Main(string[] args)
         {
             char[,] board = CreateBoard();
             List<Pieces> pieces = SetupPieces(board);
             bool success;
-            PrintBoard(board);
+            PrintBoard(board, pieces);
             while (true)
             {
-                success = EnterMove(board, pieces);
+                success = EnterMove(board, pieces, false);
                 while (!success)
                 {
                     Console.WriteLine("Invalid move try again");
-                    success = EnterMove(board, pieces);
+                    success = EnterMove(board, pieces, false);
                 }
                 Console.Clear();
-                PrintBoard(board);
+                PrintBoard(board, pieces);
+                Console.ReadKey(true);
+                if (CheckWin(pieces, false))
+                {
+                    EndGame(false);
+                }
+                Console.Clear();
+                PrintFlippedBoard(board, pieces);
+                success = EnterMove(board, pieces, true);
+                while (!success)
+                {
+                    Console.WriteLine("Invalid move try again");
+                    success = EnterMove(board, pieces, true);
+                }
+                Console.Clear();
+                PrintFlippedBoard(board, pieces);
+                Console.ReadKey(true);
+                if (CheckWin(pieces, true))
+                {
+                    EndGame(true);
+                }
+                Console.Clear();
+                PrintBoard(board, pieces);
             }
         } // Main
     }
-    abstract class Pieces // In progress
+    abstract class Pieces // Finished
     {
         protected int ycoord, xcoord;
         protected bool alive = true;
@@ -259,10 +374,21 @@ namespace Chess
         {
             return true;
         }
+        public virtual void DoubleMoved()
+        {
+        }
+        public virtual void NoDoubleMoved()
+        {
+        }
+        public virtual bool ReturnDoubleMoved()
+        {
+            return false;
+        }
     }
-    class Pawn : Pieces // En passent
+    class Pawn : Pieces // Finished
     {
-        private bool hasmoved = false;
+        private bool hasmoved;
+        private bool doublemoved;
         public Pawn(int inycoord, int inxcoord, bool incolour) : base (inycoord, inxcoord, incolour)
         {
 
@@ -274,6 +400,69 @@ namespace Chess
         public override void Moved()
         {
             hasmoved = true;
+        }
+        public override bool ReturnMoved()
+        {
+            return hasmoved;
+        }
+        public override void DoubleMoved()
+        {
+            doublemoved = true;
+        }
+        public override void NoDoubleMoved()
+        {
+            doublemoved = false;
+        }
+        public override bool ReturnDoubleMoved()
+        {
+            return doublemoved;
+        }
+        public override void Promote(List<Pieces> pieces, char[,] board)
+        {
+            if (ycoord == 7 || ycoord == 0)
+            {
+                Console.WriteLine("Your pawn can now promote");
+                Console.ReadKey(true);
+                Console.WriteLine("Enter (Q) for a Queen \nEnter (R) for a Rook \nEnter (B) for a Bishop \nEnter (K) for a Knight");
+                string promotion = Console.ReadLine().ToUpper();
+                while (promotion != "Q" && promotion != "R" && promotion != "B" && promotion != "K")
+                {
+                    Console.WriteLine("Invalid input");
+                    Console.WriteLine("Enter (Q) for a Queen \nEnter (R) for a Rook \nEnter (B) for a Bishop \nEnter (K) for a Knight");
+                    promotion = Console.ReadLine().ToLower();
+                }
+                for (int i = 0; i < pieces.Count; i++)
+                {
+                    if (pieces[i].ReturnCoords() == ReturnCoords())
+                    {
+                        pieces.RemoveAt(i);
+                    }
+                }
+                if (promotion == "R")
+                {
+                    pieces.Add(new Rook(ycoord, xcoord, colour));
+                    Console.WriteLine("A new Rook has replaced the pawn");
+                    board[ycoord, xcoord] = 'R'; Console.ReadKey(true);
+                }
+                else if (promotion == "B")
+                {
+                    pieces.Add(new Bishop(ycoord, xcoord, colour));
+                    Console.WriteLine("A new Bishop has replaced the pawn");
+                    board[ycoord, xcoord] = 'B'; Console.ReadKey(true);
+                }
+                else if (promotion == "K")
+                {
+                    pieces.Add(new Knight(ycoord, xcoord, colour));
+                    Console.WriteLine("A new Knight has replaced the pawn");
+                    board[ycoord, xcoord] = 'k'; Console.ReadKey(true);
+                }
+                else if (promotion == "Q")
+                {
+                    pieces.Add(new Queen(ycoord, xcoord, colour));
+                    Console.WriteLine("A new Queen has replaced the pawn");
+                    board[ycoord, xcoord] = 'Q'; Console.ReadKey(true);
+                }
+            }
         }
         public override List<int[]> AvailablePlaces(char[,] board, List<Pieces> pieces)
         {
@@ -325,54 +514,32 @@ namespace Chess
                     }
                 }
             }
-            return list;
-        }
-        public override void Promote(List<Pieces> pieces, char[,] board)
-        {
-            if (ycoord == 7 || ycoord == 0)
+            foreach (Pieces p in pieces)
             {
-                Console.WriteLine("Your pawn can now promote");
-                Console.ReadKey(true);
-                Console.WriteLine("Enter (Q) for a Queen \nEnter (R) for a Rook \nEnter (B) for a Bishop \nEnter (K) for a Knight");
-                string promotion = Console.ReadLine().ToUpper();
-                while (promotion != "Q" && promotion != "R" && promotion != "B" && promotion != "K")
+                if (p.ReturnColour() != colour && colour == true)
                 {
-                    Console.WriteLine("Invalid input");
-                    Console.WriteLine("Enter (Q) for a Queen \nEnter (R) for a Rook \nEnter (B) for a Bishop \nEnter (K) for a Knight");
-                    promotion = Console.ReadLine().ToLower();
-                }
-                for (int i = 0; i < pieces.Count; i++)
-                {
-                    if (pieces[i].ReturnCoords() == ReturnCoords())
+                    if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord + 1 && p.ReturnDoubleMoved())
                     {
-                        pieces.RemoveAt(i);
+                        list.Add(new int[] { ycoord + 1, xcoord + 1 , ycoord });
+                    }
+                    else if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord - 1 && p.ReturnDoubleMoved())
+                    {
+                        list.Add(new int[] { ycoord + 1, xcoord - 1 , ycoord });
                     }
                 }
-                if (promotion == "R")
+                else if (p.ReturnColour() != colour && colour == false)
                 {
-                    pieces.Add(new Rook(ycoord, xcoord, colour));
-                    Console.WriteLine("A new Rook has replaced the pawn");
-                    board[ycoord, xcoord] = 'R'; Console.ReadKey(true);
-                }
-                else if (promotion == "B")
-                {
-                    pieces.Add(new Bishop(ycoord, xcoord, colour));
-                    Console.WriteLine("A new Bishop has replaced the pawn");
-                    board[ycoord, xcoord] = 'B'; Console.ReadKey(true);
-                }
-                else if (promotion == "K")
-                {
-                    pieces.Add(new Knight(ycoord, xcoord, colour));
-                    Console.WriteLine("A new Knight has replaced the pawn");
-                    board[ycoord, xcoord] = 'k'; Console.ReadKey(true);
-                }
-                else if (promotion == "Q")
-                {
-                    pieces.Add(new Queen(ycoord, xcoord, colour));
-                    Console.WriteLine("A new Queen has replaced the pawn");
-                    board[ycoord, xcoord] = 'Q'; Console.ReadKey(true);
+                    if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord + 1 && p.ReturnDoubleMoved())
+                    {
+                        list.Add(new int[] { ycoord - 1, xcoord + 1 , ycoord });
+                    }
+                    else if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord - 1 && p.ReturnDoubleMoved())
+                    {
+                        list.Add(new int[] { ycoord - 1, xcoord - 1 , ycoord });
+                    }
                 }
             }
+            return list;
         }
     }
     class Rook : Pieces // Finished
@@ -715,7 +882,6 @@ namespace Chess
     class King : Pieces // Check, Checkmate
     {
         private bool hasmoved = false;
-        private bool castle = false;
         public King(int inycoord, int inxcoord, bool incolour) : base(inycoord, inxcoord, incolour)
         {
 
