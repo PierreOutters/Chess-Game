@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -387,10 +387,6 @@ namespace Chess
                 }
                 list.Add(new int[] { ycoord, x });
             }
-            foreach (int[] i in AvailableKills(board, pieces))
-            {
-                list.Add(i);
-            }
             return list;
         }
     }
@@ -491,8 +487,34 @@ namespace Chess
                     }
                 }
             }
-            list.Add(new int[] { ycoord + 1, xcoord - 2 });
-            list.Add(new int[] { ycoord + 1, xcoord + 2 });
+            if (board[ycoord + 1, xcoord - 2] == '_')
+            {
+                list.Add(new int[] { ycoord + 1, xcoord - 2 });
+            }
+            else
+            {
+                foreach (Pieces p in pieces)
+                {
+                    if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord - 2 && colour != p.ReturnColour())
+                    {
+                        list.Add(new int[] { ycoord + 1, xcoord - 2 });
+                    }
+                }
+            }
+            if (board[ycoord + 1, xcoord + 2] == '_')
+            {
+                list.Add(new int[] { ycoord + 1, xcoord + 2 });
+            }
+            else
+            {
+                foreach (Pieces p in pieces)
+                {
+                    if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord + 2 && colour != p.ReturnColour())
+                    {
+                        list.Add(new int[] { ycoord + 1, xcoord + 2 });
+                    }
+                }
+            }
             return list;
         }
     }
@@ -564,10 +586,6 @@ namespace Chess
                 }
                 list.Add(new int[] { y, x });
                 y--;
-            }
-            foreach (int[] i in AvailableKills(board, pieces))
-            {
-                list.Add(i);
             }
             return list;
         }
