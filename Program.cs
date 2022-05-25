@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -140,7 +140,7 @@ namespace Chess
         {
             return new char[] { (char)(xaxis + 65), char.Parse((8-yaxis).ToString())};
         }
-        static bool MakeMove(char[,] board, Pieces[] pieces)
+        static bool EnterMove(char[,] board, Pieces[] pieces)
         {
             Console.WriteLine("Please enter your move");
             string move = Console.ReadLine();
@@ -157,25 +157,28 @@ namespace Chess
             {
                 if (pieces[i].IsAlive() && pieces[i].ReturnColour() == false && pieces[i].ReturnType() == piece)
                 {
-                    for (int j = 0; j < pieces[i].AvailablePlaces(board).Count; j++)
+                    for (int j = 0; j < pieces[i].AvailablePlaces(board, pieces).Count; j++)
                     {
-
-                        if (pieces[i].AvailablePlaces(board)[j][0] == move[0] && pieces[i].AvailablePlaces(board)[j][1] == move[1])
+                        if (pieces[i].AvailablePlaces(board, pieces)[j][0] == move[0] && pieces[i].AvailablePlaces(board, pieces)[j][1] == move[1])
                         {
-                            if (board[pieces[i].AvailablePlaces(board)[j][0], pieces[i].AvailablePlaces(board)[j][1]] != '_')
+                            /*
+                            if (board[pieces[i].AvailablePlaces(board, pieces)[j][0], pieces[i].AvailablePlaces(board, pieces)[j][1]] != '_')
                             {
                                 return false;
                             }
+                            */
                             board[pieces[i].ReturnCoords()[0], pieces[i].ReturnCoords()[1]] = '_';
-                            Console.WriteLine("Available Places j 0: " + pieces[i].AvailablePlaces(board)[j][0]);
-                            board[pieces[i].AvailablePlaces(board)[j][0], pieces[i].AvailablePlaces(board)[j][1]] = piece;
-                            Console.WriteLine("Available Places j 0: " + pieces[i].AvailablePlaces(board)[j][0]);
-                            Console.WriteLine("Coords 0: " + pieces[i].ReturnCoords()[0]);
-                            Console.WriteLine("Available Places j 1: " + pieces[i].AvailablePlaces(board)[j][1]);
-                            Console.WriteLine("Coords 1: " + pieces[i].ReturnCoords()[1]);
-                            Console.ReadKey();
-                            pieces[i].ChangeCoord(pieces[i].AvailablePlaces(board)[j][0], pieces[i].AvailablePlaces(board)[j][1]);
+                            int y = pieces[i].AvailablePlaces(board, pieces)[j][0], x = pieces[i].AvailablePlaces(board, pieces)[j][1];
+                            board[pieces[i].AvailablePlaces(board, pieces)[j][0], pieces[i].AvailablePlaces(board, pieces)[j][1]] = piece;
+                            pieces[i].ChangeCoord(y, x);
                             pieces[i].Moved();
+                            foreach (Pieces p in pieces)
+                            {
+                                if (p.ReturnCoords() == pieces[i].ReturnCoords())
+                                {
+                                    p.Kill();
+                                }
+                            }
                             return true;
                         }
                     }
@@ -191,12 +194,13 @@ namespace Chess
             PrintBoard(board);
             while (true)
             {
-                success = MakeMove(board, pieces);
+                success = EnterMove(board, pieces);
                 while (!success)
                 {
                     Console.WriteLine("Invalid move try again");
-                    success = MakeMove(board, pieces);
+                    success = EnterMove(board, pieces);
                 }
+                Console.Clear();
                 PrintBoard(board);
             }
         }
@@ -214,6 +218,10 @@ namespace Chess
         {
             return alive;
         }
+        public void Kill()
+        {
+            alive = false;
+        }
         public bool ReturnColour()
         {
             return colour;
@@ -227,14 +235,16 @@ namespace Chess
         {
             ycoord = y; xcoord = x;
         }
-        public abstract List<int[]> AvailablePlaces(char[,] board);
+        public abstract List<int[]> AvailablePlaces(char[,] board, Pieces[] pieces);
         public abstract char ReturnType();
         public virtual void Moved()
         {
         }
+        public abstract List<int[]> AvailableKills(char[,] board, Pieces[] pieces);
     }
     class Pawn : Pieces
     {
+        private bool hasmoved = false;
         public Pawn(int inycoord, int inxcoord, bool incolour) : base (inycoord, inxcoord, incolour)
         {
 
@@ -243,28 +253,67 @@ namespace Chess
         {
             return 'p';
         }
-        public bool hasmoved = false;
         public override void Moved()
         {
             hasmoved = true;
         }
-        public override List<int[]> AvailablePlaces(char[,] board)
+        public override List<int[]> AvailablePlaces(char[,] board, Pieces[] pieces)
         {
             List<int[]> list = new List<int[]>();
-            if (colour == false)
+            if (colour == false && ycoord - 1 > 0)
             {
-                list.Add(new int[] { ycoord - 1, xcoord });
-                if (!hasmoved)
+                if (board[ycoord - 1, xcoord] == '_')
                 {
-                    list.Add (new int[] { ycoord - 2, xcoord });
+                    list.Add(new int[] { ycoord - 1, xcoord });
+                    if (!hasmoved)
+                    {
+                        list.Add(new int[] { ycoord - 2, xcoord });
+                    }
                 }
             }
-            else
+            if (colour == true && ycoord + 1 < 7)
             {
-                list.Add(new int[] { ycoord + 1, xcoord });
-                if (!hasmoved)
+                if (board[ycoord + 1, xcoord] == '_')
                 {
-                    list.Add(new int[] { ycoord + 2, xcoord });
+                    list.Add(new int[] { ycoord + 1, xcoord });
+                    if (!hasmoved)
+                    {
+                        list.Add(new int[] { ycoord + 2, xcoord });
+                    }
+                }
+            }
+            foreach (int[] i in AvailableKills(board, pieces))
+            {
+                list.Add(i);
+            }
+            return list;
+        }
+        public override List<int[]> AvailableKills(char[,] board, Pieces[] pieces)
+        {
+            List<int[]> list = new List<int[]>();
+            foreach (Pieces p in pieces)
+            {
+                if (p.ReturnColour() != colour && colour == true)
+                {
+                    if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord + 1)
+                    {
+                        list.Add(new int[] { ycoord + 1, xcoord + 1});
+                    }
+                    else if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord - 1)
+                    {
+                        list.Add(new int[] { ycoord + 1, xcoord - 1});
+                    }
+                }
+                else if (p.ReturnColour() != colour && colour == false)
+                {
+                    if (p.ReturnCoords()[0] == ycoord - 1 && p.ReturnCoords()[1] == xcoord + 1)
+                    {
+                        list.Add(new int[] { ycoord - 1, xcoord + 1});
+                    }
+                    else if (p.ReturnCoords()[0] == ycoord - 1 && p.ReturnCoords()[1] == xcoord - 1)
+                    {
+                        list.Add(new int[] { ycoord - 1, xcoord - 1 });
+                    }
                 }
             }
             return list;
@@ -272,15 +321,20 @@ namespace Chess
     }
     class Rook : Pieces
     {
+        private bool hasmoved = false;
         public Rook(int inycoord, int inxcoord, bool incolour) : base(inycoord, inxcoord, incolour)
         {
 
+        }
+        public override void Moved()
+        {
+            hasmoved = true;
         }
         public override char ReturnType()
         {
             return 'R';
         }
-        public override List<int[]> AvailablePlaces(char[,] board)
+        public override List<int[]> AvailablePlaces(char[,] board, Pieces[] pieces)
         {
             List<int[]> list = new List<int[]>();
             for (int y = ycoord+1; y < 8; y++)
@@ -291,7 +345,7 @@ namespace Chess
                 }
                 list.Add(new int[] { y, xcoord });
             }
-            for (int y = ycoord - 1; y > 0; y--)
+            for (int y = ycoord - 1; y >= 0; y--)
             {
                 if (board[y, xcoord] != '_')
                 {
@@ -307,7 +361,7 @@ namespace Chess
                 }
                 list.Add(new int[] { ycoord, x });
             }
-            for (int x = xcoord - 1; x > 0; x--)
+            for (int x = xcoord - 1; x >= 0; x--)
             {
                 if (board[ycoord, x] != '_')
                 {
@@ -315,6 +369,15 @@ namespace Chess
                 }
                 list.Add(new int[] { ycoord, x });
             }
+            foreach (int[] i in AvailableKills(board, pieces))
+            {
+                list.Add(i);
+            }
+            return list;
+        }
+        public override List<int[]> AvailableKills(char[,] board, Pieces[] pieces)
+        {
+            List<int[]> list = new List<int[]>();
             return list;
         }
     }
@@ -328,7 +391,24 @@ namespace Chess
         {
             return 'k';
         }
-        public override List<int[]> AvailablePlaces(char[,] board)
+        public override List<int[]> AvailablePlaces(char[,] board, Pieces[] pieces)
+        {
+            List<int[]> list = new List<int[]>();
+            list.Add(new int[] { ycoord - 2, xcoord - 1 });
+            list.Add(new int[] { ycoord - 2, xcoord + 1 });
+            list.Add(new int[] { ycoord - 1, xcoord - 2 });
+            list.Add(new int[] { ycoord - 1, xcoord + 2 });
+            list.Add(new int[] { ycoord + 2, xcoord - 1 });
+            list.Add(new int[] { ycoord + 2, xcoord + 1 });
+            list.Add(new int[] { ycoord + 1, xcoord - 2 });
+            list.Add(new int[] { ycoord + 1, xcoord + 2 });
+            foreach (int[] i in AvailableKills(board, pieces))
+            {
+                list.Add(i);
+            }
+            return list;
+        }
+        public override List<int[]> AvailableKills(char[,] board, Pieces[] pieces)
         {
             List<int[]> list = new List<int[]>();
             return list;
@@ -344,7 +424,72 @@ namespace Chess
         {
             return 'B';
         }
-        public override List<int[]> AvailablePlaces(char[,] board)
+        public override List<int[]> AvailablePlaces(char[,] board, Pieces[] pieces)
+        {
+            List<int[]> list = new List<int[]>();
+            int y = ycoord + 1;
+            for (int x = xcoord+1; x < 8; x++)
+            {
+                if (y > 7)
+                {
+                    break;
+                }
+                if (board[y, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { y, x });
+                y++;
+            }
+            y = ycoord - 1;
+            for (int x = xcoord + 1; x < 8; x++)
+            {
+                if (y < 0)
+                {
+                    break;
+                }
+                if (board[y, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { y, x });
+                y--;
+            }
+            y = ycoord + 1;
+            for (int x = xcoord - 1; x >= 0; x--)
+            {
+                if (y > 7)
+                {
+                    break;
+                }
+                if (board[y, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { y, x });
+                y++;
+            }
+            y = ycoord - 1;
+            for (int x = xcoord - 1; x >= 0; x--)
+            {
+                if (y < 0)
+                {
+                    break;
+                }
+                if (board[y, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { y, x });
+                y--;
+            }
+            foreach (int[] i in AvailableKills(board, pieces))
+            {
+                list.Add(i);
+            }
+            return list;
+        }
+        public override List<int[]> AvailableKills(char[,] board, Pieces[] pieces)
         {
             List<int[]> list = new List<int[]>();
             return list;
@@ -352,15 +497,37 @@ namespace Chess
     }
     class King : Pieces
     {
+        private bool hasmoved = false;
         public King(int inycoord, int inxcoord, bool incolour) : base(inycoord, inxcoord, incolour)
         {
 
+        }
+        public override void Moved()
+        {
+            hasmoved = true;
         }
         public override char ReturnType()
         {
             return 'K';
         }
-        public override List<int[]> AvailablePlaces(char[,] board)
+        public override List<int[]> AvailablePlaces(char[,] board, Pieces[] pieces)
+        {
+            List<int[]> list = new List<int[]>();
+            list.Add(new int[] { ycoord + 1, xcoord });
+            list.Add(new int[] { ycoord + 1, xcoord + 1 });
+            list.Add(new int[] { ycoord, xcoord + 1 });
+            list.Add(new int[] { ycoord - 1, xcoord + 1 });
+            list.Add(new int[] { ycoord - 1, xcoord });
+            list.Add(new int[] { ycoord - 1, xcoord - 1 });
+            list.Add(new int[] { ycoord, xcoord - 1 });
+            list.Add(new int[] { ycoord - 1, xcoord - 1 });
+            foreach (int[] i in AvailableKills(board, pieces))
+            {
+                list.Add(i);
+            }
+            return list;
+        }
+        public override List<int[]> AvailableKills(char[,] board, Pieces[] pieces)
         {
             List<int[]> list = new List<int[]>();
             return list;
@@ -376,7 +543,104 @@ namespace Chess
         {
             return 'Q';
         }
-        public override List<int[]> AvailablePlaces(char[,] board)
+        public override List<int[]> AvailablePlaces(char[,] board, Pieces[] pieces)
+        {
+            List<int[]> list = new List<int[]>();
+            for (int i = ycoord + 1; i < 8; i++)
+            {
+                if (board[i, xcoord] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { i, xcoord });
+            }
+            for (int i = ycoord - 1; i >= 0; i--)
+            {
+                if (board[i, xcoord] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { i, xcoord });
+            }
+            for (int x = xcoord + 1; x < 8; x++)
+            {
+                if (board[ycoord, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { ycoord, x });
+            }
+            for (int x = xcoord - 1; x >= 0; x--)
+            {
+                if (board[ycoord, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { ycoord, x });
+            }
+            int y = ycoord + 1;
+            for (int x = xcoord + 1; x < 8; x++)
+            {
+                if (y > 7)
+                {
+                    break;
+                }
+                if (board[y, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { y, x });
+                y++;
+            }
+            y = ycoord - 1;
+            for (int x = xcoord + 1; x < 8; x++)
+            {
+                if (y < 0)
+                {
+                    break;
+                }
+                if (board[y, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { y, x });
+                y--;
+            }
+            y = ycoord + 1;
+            for (int x = xcoord - 1; x >= 0; x--)
+            {
+                if (y > 7)
+                {
+                    break;
+                }
+                if (board[y, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { y, x });
+                y++;
+            }
+            y = ycoord - 1;
+            for (int x = xcoord - 1; x >= 0; x--)
+            {
+                if (y < 0)
+                {
+                    break;
+                }
+                if (board[y, x] != '_')
+                {
+                    break;
+                }
+                list.Add(new int[] { y, x });
+                y--;
+            }
+            foreach (int[] i in AvailableKills(board, pieces))
+            {
+                list.Add(i);
+            }
+            return list;
+        }
+        public override List<int[]> AvailableKills(char[,] board, Pieces[] pieces)
         {
             List<int[]> list = new List<int[]>();
             return list;
