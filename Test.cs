@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Chess
 {
-    class Program
+    class Program // Need to update visually
     {
         static char[,] CreateBoard()
         {
@@ -1035,7 +1035,7 @@ namespace Chess
             return list;
         }
     }
-    class King : Pieces // Check, Checkmate
+    class King : Pieces // Checkmate
     {
         private bool hasmoved = false;
         public King(int inycoord, int inxcoord, bool incolour) : base(inycoord, inxcoord, incolour)
