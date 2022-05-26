@@ -12,8 +12,8 @@ namespace Chess
         {
             char[,] board =
             {
-                { 'R', 'k', 'B', 'Q', 'K', 'B', 'k', 'R'}, // y-axis is y, x-axis is x
-                { 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'},
+                { 'R', 'k', 'B', 'Q', 'K', 'B', 'k', 'R'}, // These are the char that are needed to be typed
+                { 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'}, // To do a movement command when playing the game
                 { '_', '_', '_', '_', '_', '_', '_', '_'},
                 { '_', '_', '_', '_', '_', '_', '_', '_'},
                 { '_', '_', '_', '_', '_', '_', '_', '_'},
@@ -94,7 +94,7 @@ namespace Chess
         {
             for (int y = 0; y < 8; y++)
             {
-                Console.Write((8-y) + " |");
+                Console.Write((8 - y) + " |");
                 for (int x = 0; x < 8; x++)
                 {
                     if (board[y, x] == '_')
@@ -150,7 +150,7 @@ namespace Chess
         } // Finished
         static int[] ProcessMove(char xaxis, char yaxis)
         {
-            return new int[] { 8-int.Parse(yaxis.ToString()), (int)xaxis - 65 };
+            return new int[] { 8 - int.Parse(yaxis.ToString()), (int)xaxis - 65 };
         }  // Finished
         /*static char[] BackwardsProcessMove(int yaxis, int xaxis)
         {
@@ -212,7 +212,7 @@ namespace Chess
                             }
                             board[pieces[i].ReturnCoords()[0], pieces[i].ReturnCoords()[1]] = '_';
                             board[y, x] = piece;
-                            if (pieces[i].ReturnType() == 'K' && pieces[i].ReturnCoords()[1] - x == - 2)
+                            if (pieces[i].ReturnType() == 'K' && pieces[i].ReturnCoords()[1] - x == -2)
                             {
                                 foreach (Pieces p in pieces)
                                 {
@@ -389,7 +389,7 @@ namespace Chess
     {
         private bool hasmoved;
         private bool doublemoved;
-        public Pawn(int inycoord, int inxcoord, bool incolour) : base (inycoord, inxcoord, incolour)
+        public Pawn(int inycoord, int inxcoord, bool incolour) : base(inycoord, inxcoord, incolour)
         {
 
         }
@@ -520,22 +520,22 @@ namespace Chess
                 {
                     if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord + 1 && p.ReturnDoubleMoved())
                     {
-                        list.Add(new int[] { ycoord + 1, xcoord + 1 , ycoord });
+                        list.Add(new int[] { ycoord + 1, xcoord + 1, ycoord });
                     }
                     else if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord - 1 && p.ReturnDoubleMoved())
                     {
-                        list.Add(new int[] { ycoord + 1, xcoord - 1 , ycoord });
+                        list.Add(new int[] { ycoord + 1, xcoord - 1, ycoord });
                     }
                 }
                 else if (p.ReturnColour() != colour && colour == false)
                 {
                     if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord + 1 && p.ReturnDoubleMoved())
                     {
-                        list.Add(new int[] { ycoord - 1, xcoord + 1 , ycoord });
+                        list.Add(new int[] { ycoord - 1, xcoord + 1, ycoord });
                     }
                     else if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord - 1 && p.ReturnDoubleMoved())
                     {
-                        list.Add(new int[] { ycoord - 1, xcoord - 1 , ycoord });
+                        list.Add(new int[] { ycoord - 1, xcoord - 1, ycoord });
                     }
                 }
             }
@@ -564,9 +564,9 @@ namespace Chess
         public override List<int[]> AvailablePlaces(char[,] board, List<Pieces> pieces)
         {
             List<int[]> list = new List<int[]>();
-            for (int y = ycoord+1; y < 8; y++)
+            for (int y = ycoord + 1; y < 8; y++)
             {
-                if (board[y,xcoord] != '_')
+                if (board[y, xcoord] != '_')
                 {
                     foreach (Pieces p in pieces)
                     {
@@ -793,7 +793,7 @@ namespace Chess
         {
             List<int[]> list = new List<int[]>();
             int y = ycoord + 1;
-            for (int x = xcoord+1; x < 8; x++)
+            for (int x = xcoord + 1; x < 8; x++)
             {
                 if (y > 7)
                 {
@@ -909,7 +909,7 @@ namespace Chess
                     {
                         if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord && colour != p.ReturnColour())
                         {
-                            list.Add(new int[] { ycoord + 1, xcoord});
+                            list.Add(new int[] { ycoord + 1, xcoord });
                         }
                     }
                 }
@@ -918,7 +918,7 @@ namespace Chess
             {
                 if (board[ycoord + 1, xcoord + 1] == '_')
                 {
-                    list.Add(new int[] { ycoord + 1, xcoord + 1});
+                    list.Add(new int[] { ycoord + 1, xcoord + 1 });
                 }
                 else
                 {
@@ -926,7 +926,7 @@ namespace Chess
                     {
                         if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord + 1 && colour != p.ReturnColour())
                         {
-                            list.Add(new int[] { ycoord + 1, xcoord + 1});
+                            list.Add(new int[] { ycoord + 1, xcoord + 1 });
                         }
                     }
                 }
@@ -935,7 +935,7 @@ namespace Chess
             {
                 if (board[ycoord, xcoord + 1] == '_')
                 {
-                    list.Add(new int[] { ycoord, xcoord + 1});
+                    list.Add(new int[] { ycoord, xcoord + 1 });
                 }
                 else
                 {
@@ -943,7 +943,7 @@ namespace Chess
                     {
                         if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == xcoord + 1 && colour != p.ReturnColour())
                         {
-                            list.Add(new int[] { ycoord, xcoord + 1});
+                            list.Add(new int[] { ycoord, xcoord + 1 });
                         }
                     }
                 }
@@ -969,7 +969,7 @@ namespace Chess
             {
                 if (board[ycoord - 1, xcoord] == '_')
                 {
-                    list.Add(new int[] { ycoord - 1, xcoord});
+                    list.Add(new int[] { ycoord - 1, xcoord });
                 }
                 else
                 {
@@ -982,11 +982,11 @@ namespace Chess
                     }
                 }
             }
-            if (ycoord - 1 >= 0 && xcoord - 1 >= 0)
+            if (ycoord + 1 < 8 && xcoord - 1 >= 0)
             {
-                if (board[ycoord - 1, xcoord - 1] == '_')
+                if (board[ycoord + 1, xcoord - 1] == '_')
                 {
-                    list.Add(new int[] { ycoord - 1, xcoord - 1 });
+                    list.Add(new int[] { ycoord + 1, xcoord - 1 });
                 }
                 else
                 {
