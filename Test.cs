@@ -355,6 +355,8 @@ namespace Chess
                 success = EnterMove(board, pieces, false);
                 while (!success)
                 {
+                    Console.Clear();
+                    PrintBoard(board, pieces);
                     Console.WriteLine("Invalid move try again");
                     success = EnterMove(board, pieces, false);
                 }
@@ -370,6 +372,8 @@ namespace Chess
                 success = EnterMove(board, pieces, true);
                 while (!success)
                 {
+                    Console.Clear();
+                    PrintFlippedBoard(board, pieces);
                     Console.WriteLine("Invalid move try again");
                     success = EnterMove(board, pieces, true);
                 }
