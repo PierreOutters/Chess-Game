@@ -25,8 +25,10 @@ namespace Chess
         } // Finished
         static List<Pieces> SetupPieces(char[,] board)
         {
-            List<Pieces> pieces = new List<Pieces>();
-            pieces.Add(new Pawn(1000, 1000, false));
+            List<Pieces> pieces = new List<Pieces>
+            {
+                new Pawn(1000, 1000, false)
+            };
             int k = 0;
             for (int y = 0; y < 2; y++)
             {
@@ -169,7 +171,7 @@ namespace Chess
             {
                 return false;
             }
-            else if (!int.TryParse(move[2].ToString(), out int x))
+            else if (!int.TryParse(move[2].ToString(), out _))
             {
                 return false;
             }
@@ -275,7 +277,7 @@ namespace Chess
                 }
             }
         } // Finished
-        static void CheckingDoubleMoved(char[,] board, List<Pieces> pieces, int i, int available0)
+        static void CheckingDoubleMoved(List<Pieces> pieces, int i, int available0)
         {
             if (pieces[i].ReturnType() == 'p' && !pieces[i].ReturnMoved() && available0 == 3 || pieces[i].ReturnType() == 'p' && !pieces[i].ReturnMoved() && available0 == 4)
             {
@@ -338,7 +340,7 @@ namespace Chess
                             int available0 = pieces[i].AvailablePlaces(board, pieces)[j][0], available1 = pieces[i].AvailablePlaces(board, pieces)[j][1];
                             bool bcheck = false, wcheck = false;
                             EnPassant(board, pieces, ref i, j, available1);
-                            CheckingDoubleMoved(board, pieces, i, available0);
+                            CheckingDoubleMoved(pieces, i, available0);
                             if (!DoesItRemoveCheck(board, pieces, ref i, available0, available1, xcoord, ycoord, ref bcheck, ref wcheck, colour))
                             {
                                 return false;
@@ -402,7 +404,7 @@ namespace Chess
                             {
                                 pieces.RemoveAt(pieces.Count - 1);
                             }
-                            board[pieces[pieces.Count-1].ReturnCoords()[0], pieces[pieces.Count - 1].ReturnCoords()[1]] = pieces[pieces.Count - 1].ReturnType();
+                            board[pieces[pieces.Count - 1].ReturnCoords()[0], pieces[pieces.Count - 1].ReturnCoords()[1]] = pieces[pieces.Count - 1].ReturnType();
                             return false;
                         }
                         board[avilable0, avilable1] = '_';
@@ -419,7 +421,7 @@ namespace Chess
             }
             return true;
         } // Finished
-        static void Main(string[] args)
+        static void Main()
         {
             while (true)
             {
