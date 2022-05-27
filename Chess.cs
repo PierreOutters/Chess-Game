@@ -156,7 +156,7 @@ namespace Chess
         /*static char[] BackwardsProcessMove(int yaxis, int xaxis)
         {
             return new char[] { (char)(xaxis + 65), char.Parse((8-yaxis).ToString())};
-        } */ // May help me
+        } */ // Could help
         static bool EnterMove(char[,] board, List<Pieces> pieces, bool colour)
         {
             if (colour)
@@ -313,7 +313,7 @@ namespace Chess
                                 if (CheckCheckMate(board, pieces, colour))
                                 {
                                     Console.WriteLine("King is in CheckMate"); Console.ReadKey(true);
-                                    EndGame(colour);
+                                    pieces[0].CheckMate(!true);
                                 }
                             }
                             if (wcheck)
@@ -340,7 +340,7 @@ namespace Chess
                 p.AvailablePlaces(board, pieces);
             }
             return pieces[0].ReturnCheck(colour);
-        }
+        } // Finished
         static bool CheckCheckMate(char[,] board, List<Pieces> pieces, bool colour)
         {
             for (int i = 0; i < pieces.Count; i++)
@@ -390,61 +390,51 @@ namespace Chess
             }
             return true;
         } // Finished
-        static void EndGame(bool colour)
-        {
-            if (colour)
-            {
-                Console.WriteLine("Black has won the game");
-                Console.ReadKey(true); Environment.Exit(0);
-            }
-            else
-            {
-                Console.WriteLine("White has won the game");
-                Console.ReadKey(true); Environment.Exit(0);
-            }
-        } // Finished
         static void Main(string[] args)
         {
-            char[,] board = CreateBoard();
-            List<Pieces> pieces = SetupPieces(board);
-            bool success;
-            PrintBoard(board, pieces);
             while (true)
             {
-                success = EnterMove(board, pieces, false);
-                while (!success)
-                {
-                    Console.Clear();
-                    PrintBoard(board, pieces);
-                    Console.WriteLine("Invalid move try again");
-                    success = EnterMove(board, pieces, false);
-                }
-                Console.Clear();
+                char[,] board = CreateBoard();
+                List<Pieces> pieces = SetupPieces(board);
+                bool success;
                 PrintBoard(board, pieces);
-                Console.ReadKey(true);
-                /*if (CheckWin(pieces, false))
+                while (true)
                 {
-                    EndGame(false);
-                }*/
-                Console.Clear();
-                PrintFlippedBoard(board, pieces);
-                success = EnterMove(board, pieces, true);
-                while (!success)
-                {
+                    success = EnterMove(board, pieces, false);
+                    while (!success)
+                    {
+                        Console.Clear();
+                        PrintBoard(board, pieces);
+                        Console.WriteLine("Invalid move try again");
+                        success = EnterMove(board, pieces, false);
+                    }
+                    Console.Clear();
+                    if (pieces[0].ReturnCheckMate())
+                    {
+                        break;
+                    }
+                    PrintBoard(board, pieces);
+                    Console.ReadKey(true);
                     Console.Clear();
                     PrintFlippedBoard(board, pieces);
-                    Console.WriteLine("Invalid move try again");
                     success = EnterMove(board, pieces, true);
+                    while (!success)
+                    {
+                        Console.Clear();
+                        PrintFlippedBoard(board, pieces);
+                        Console.WriteLine("Invalid move try again");
+                        success = EnterMove(board, pieces, true);
+                    }
+                    if (pieces[0].ReturnCheckMate())
+                    {
+                        continue;
+                    }
+                    Console.Clear();
+                    PrintFlippedBoard(board, pieces);
+                    Console.ReadKey(true);
+                    Console.Clear();
+                    PrintBoard(board, pieces);
                 }
-                Console.Clear();
-                PrintFlippedBoard(board, pieces);
-                Console.ReadKey(true);
-                /*if (CheckWin(pieces, true))
-                {
-                    EndGame(true);
-                }*/
-                Console.Clear();
-                PrintBoard(board, pieces);
             }
         } // Main
     }
@@ -454,6 +444,7 @@ namespace Chess
         protected bool alive = true;
         protected bool colour; //false for white, true for black
         protected bool wcheck, bcheck;
+        protected bool checkmate;
         protected bool fwcheck, fbcheck;
         public Pieces(int inycoord, int inxcoord, bool incolour)
         {
@@ -488,6 +479,22 @@ namespace Chess
                 wcheck = true;
                 fwcheck = true;
             }
+        }
+        public void CheckMate(bool colour)
+        {
+            if (colour)
+            {
+                Console.WriteLine("Black has won the game");
+            }
+            else
+            {
+                Console.WriteLine("White has won the game");
+            }
+            checkmate = true;
+        }
+        public bool ReturnCheckMate()
+        {
+            return checkmate;
         }
         public bool ReturnFCheck(bool colour)
         {
