@@ -6,14 +6,14 @@ using System.Threading.Tasks;
 
 namespace Chess
 {
-    class Program
+    class Program // Need to update visually
     {
         static char[,] CreateBoard()
         {
             char[,] board =
             {
-                { 'R', 'k', 'B', 'Q', 'K', 'B', 'k', 'R'}, // These are the char that are needed to be typed
-                { 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'}, // To do a movement command when playing the game
+                { 'R', 'k', 'B', 'Q', 'K', 'B', 'k', 'R'}, // y-axis is y, x-axis is x
+                { 'p', 'p', 'p', 'p', 'p', 'p', 'p', 'p'},
                 { '_', '_', '_', '_', '_', '_', '_', '_'},
                 { '_', '_', '_', '_', '_', '_', '_', '_'},
                 { '_', '_', '_', '_', '_', '_', '_', '_'},
@@ -26,6 +26,7 @@ namespace Chess
         static List<Pieces> SetupPieces(char[,] board)
         {
             List<Pieces> pieces = new List<Pieces>();
+            pieces.Add(new Pawn(1000, 1000, false));
             int k = 0;
             for (int y = 0; y < 2; y++)
             {
@@ -168,6 +169,10 @@ namespace Chess
             }
             Console.WriteLine("Please enter your move");
             string move = Console.ReadLine();
+            /*if (move == "") // must delete after testing
+            {
+                return true;
+            }*/
             if (move.Length != 3)
             {
                 return false;
@@ -185,6 +190,7 @@ namespace Chess
         } // Finished
         static bool MakeMove(char[,] board, List<Pieces> pieces, int[] move, char piece, bool colour)
         {
+            pieces[0].ResetCheck();
             for (int i = 0; i < pieces.Count; i++)
             {
                 if (pieces[i].IsAlive() && pieces[i].ReturnColour() == colour && pieces[i].ReturnType() == piece)
@@ -193,6 +199,7 @@ namespace Chess
                     {
                         if (pieces[i].AvailablePlaces(board, pieces)[j][0] == move[0] && pieces[i].AvailablePlaces(board, pieces)[j][1] == move[1])
                         {
+                            int r = pieces[i].ReturnCoords()[0]; int t = pieces[i].ReturnCoords()[1];
                             int y = pieces[i].AvailablePlaces(board, pieces)[j][0], x = pieces[i].AvailablePlaces(board, pieces)[j][1];
                             if (pieces[i].AvailablePlaces(board, pieces)[j].Length == 3)
                             {
@@ -210,9 +217,50 @@ namespace Chess
                                     }
                                 }
                             }
-                            board[pieces[i].ReturnCoords()[0], pieces[i].ReturnCoords()[1]] = '_';
-                            board[y, x] = piece;
-                            if (pieces[i].ReturnType() == 'K' && pieces[i].ReturnCoords()[1] - x == -2)
+                            board[r, t] = '_';
+                            board[y, x] = pieces[i].ReturnType();
+                            pieces[i].ChangeToCoord(y, x);
+                            Pieces temp = new Knight(100, 100, true);
+                            for (int k = 0; k < pieces.Count; k++)
+                            {
+                                if (i != k && pieces[k].ReturnCoords()[0] == y && pieces[k].ReturnCoords()[1] == x)
+                                {
+                                    temp = pieces[k];
+                                    pieces.RemoveAt(k);
+                                    if (k < i)
+                                    {
+                                        i--;
+                                    }
+                                    break;
+                                }
+                            }
+                            bool bcheck = false, wcheck = false;
+                            if (CheckCheck(board, pieces, colour))
+                            {
+                                Console.WriteLine("King is in check");
+                                board[y, x] = '_';
+                                board[r, t] = pieces[i].ReturnType();
+                                pieces[i].ChangeToCoord(r, t);
+                                pieces.Add(temp);
+                                if (pieces[pieces.Count - 1].ReturnCoords()[0] == 100)
+                                {
+                                    pieces.RemoveAt(pieces.Count - 1);
+                                }
+                                return false;
+                            }
+                            else if (CheckCheck(board, pieces, !colour))
+                            {
+                                if (colour)
+                                {
+                                    bcheck = true;
+                                }
+                                else
+                                {
+                                    wcheck = true;
+                                }
+                            }
+                            pieces[i].ChangeToCoord(r, t);
+                            if (pieces[i].ReturnType() == 'K' && pieces[i].ReturnCoords()[1] - x == - 2 && !pieces[i].ReturnFCheck(colour))
                             {
                                 foreach (Pieces p in pieces)
                                 {
@@ -220,7 +268,7 @@ namespace Chess
                                     {
                                         board[p.ReturnCoords()[0], p.ReturnCoords()[1]] = '_';
                                         board[p.ReturnCoords()[0], 5] = p.ReturnType();
-                                        pieces[i].ChangeToCoord(p.ReturnCoords()[0], 5);
+                                        p.ChangeToCoord(p.ReturnCoords()[0], 5);
                                         p.Moved();
                                     }
                                 }
@@ -233,7 +281,7 @@ namespace Chess
                                     {
                                         board[p.ReturnCoords()[0], p.ReturnCoords()[1]] = '_';
                                         board[p.ReturnCoords()[0], 3] = p.ReturnType();
-                                        pieces[i].ChangeToCoord(p.ReturnCoords()[0], 3);
+                                        p.ChangeToCoord(p.ReturnCoords()[0], 3);
                                         p.Moved();
                                     }
                                 }
@@ -260,20 +308,84 @@ namespace Chess
                                     i--; k--;
                                 }
                             }
+                            if (wcheck || bcheck)
+                            {
+                                if (CheckCheckMate(board, pieces, colour))
+                                {
+                                    Console.WriteLine("King is in CheckMate"); Console.ReadKey(true);
+                                    EndGame(colour);
+                                }
+                            }
+                            if (wcheck)
+                            {
+                                Console.WriteLine("White king is in check");
+                                Console.ReadKey(true);
+                            }
+                            else if (bcheck)
+                            {
+                                Console.WriteLine("Black king is in check");
+                                Console.ReadKey(true);
+                            }
                             return true;
                         }
                     }
                 }
             }
             return false;
-        } // Finished
-        static bool CheckWin(List<Pieces> pieces, bool colour)
+        } // Make readable
+        static bool CheckCheck(char[,] board, List<Pieces> pieces, bool colour)
         {
             foreach (Pieces p in pieces)
             {
-                if (p.ReturnColour() != colour && p.ReturnType() == 'K')
+                p.AvailablePlaces(board, pieces);
+            }
+            return pieces[0].ReturnCheck(colour);
+        }
+        static bool CheckCheckMate(char[,] board, List<Pieces> pieces, bool colour)
+        {
+            for (int i = 0; i < pieces.Count; i++)
+            {
+                for (int j = 0; j < pieces[i].AvailablePlaces(board, pieces).Count; j++)
                 {
-                    return false;
+                    int avilable0 = pieces[i].AvailablePlaces(board, pieces)[j][0], avilable1 = pieces[i].AvailablePlaces(board, pieces)[j][1];
+                    int ycoord = pieces[i].ReturnCoords()[0], xcoord = pieces[i].ReturnCoords()[1]; char type = pieces[i].ReturnType();
+                    board[ycoord, xcoord] = '_';
+                    board[avilable0, avilable1] = pieces[i].ReturnType();
+                    pieces[i].ChangeToCoord(avilable0, avilable1);
+                    Pieces temp = new Knight(100, 100, true);
+                    for (int k = 0; k < pieces.Count; k++)
+                    {
+                        if (i != k && pieces[k].ReturnCoords()[0] == ycoord && pieces[k].ReturnCoords()[1] == xcoord)
+                        {
+                            temp = pieces[k];
+                            pieces.RemoveAt(k);
+                            if (k < i)
+                            {
+                                i--;
+                            }
+                            break;
+                        }
+                    }
+                    if (CheckCheck(board, pieces, !colour) == false)
+                    {
+                        board[ycoord, xcoord] = '_';
+                        board[avilable0, avilable1] = type;
+                        pieces[i].ChangeToCoord(avilable1, avilable0);
+                        pieces.Add(temp);
+                        if (pieces[pieces.Count - 1].ReturnCoords()[0] == 100)
+                        {
+                            pieces.RemoveAt(pieces.Count - 1);
+                        }
+                        return false;
+                    }
+                    board[ycoord, xcoord] = '_';
+                    board[avilable0, avilable1] = type;
+                    pieces[i].ChangeToCoord(avilable1, avilable0);
+                    pieces.Add(temp);
+                    if (pieces[pieces.Count - 1].ReturnCoords()[0] == 100)
+                    {
+                        pieces.RemoveAt(pieces.Count - 1);
+                    }
                 }
             }
             return true;
@@ -310,10 +422,10 @@ namespace Chess
                 Console.Clear();
                 PrintBoard(board, pieces);
                 Console.ReadKey(true);
-                if (CheckWin(pieces, false))
+                /*if (CheckWin(pieces, false))
                 {
                     EndGame(false);
-                }
+                }*/
                 Console.Clear();
                 PrintFlippedBoard(board, pieces);
                 success = EnterMove(board, pieces, true);
@@ -327,10 +439,10 @@ namespace Chess
                 Console.Clear();
                 PrintFlippedBoard(board, pieces);
                 Console.ReadKey(true);
-                if (CheckWin(pieces, true))
+                /*if (CheckWin(pieces, true))
                 {
                     EndGame(true);
-                }
+                }*/
                 Console.Clear();
                 PrintBoard(board, pieces);
             }
@@ -341,6 +453,8 @@ namespace Chess
         protected int ycoord, xcoord;
         protected bool alive = true;
         protected bool colour; //false for white, true for black
+        protected bool wcheck, bcheck;
+        protected bool fwcheck, fbcheck;
         public Pieces(int inycoord, int inxcoord, bool incolour)
         {
             ycoord = inycoord; xcoord = inxcoord; colour = incolour;
@@ -348,10 +462,6 @@ namespace Chess
         public bool IsAlive()
         {
             return alive;
-        }
-        public void Kill()
-        {
-            alive = false;
         }
         public bool ReturnColour()
         {
@@ -366,9 +476,51 @@ namespace Chess
         {
             ycoord = y; xcoord = x;
         }
+        public void Check(bool colour)
+        {
+            if (colour)
+            {
+                bcheck = true;
+                fbcheck = true;
+            }
+            else
+            {
+                wcheck = true;
+                fwcheck = true;
+            }
+        }
+        public bool ReturnFCheck(bool colour)
+        {
+            if (colour)
+            {
+                return fbcheck;
+            }
+            else
+            {
+                return fwcheck;
+            }
+        }
+        public bool ReturnCheck(bool colour)
+        {
+            if (colour)
+            {
+                return bcheck;
+            }
+            else
+            {
+                return wcheck;
+            }
+        }
+        public void ResetCheck()
+        {
+            wcheck = false; bcheck = false;
+        }
         public abstract List<int[]> AvailablePlaces(char[,] board, List<Pieces> pieces);
         public abstract char ReturnType();
         public virtual void Moved()
+        {
+        }
+        public virtual void UnMoved()
         {
         }
         public virtual void Promote(List<Pieces> pieces, char[,] board)
@@ -471,6 +623,10 @@ namespace Chess
         public override List<int[]> AvailablePlaces(char[,] board, List<Pieces> pieces)
         {
             List<int[]> list = new List<int[]>();
+            if (ycoord == 1000)
+            {
+                return list;
+            }
             if (colour == false && ycoord - 1 > 0)
             {
                 if (board[ycoord - 1, xcoord] == '_')
@@ -500,10 +656,18 @@ namespace Chess
                     if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord + 1)
                     {
                         list.Add(new int[] { ycoord + 1, xcoord + 1 });
+                        if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                        {
+                            pieces[0].Check(!colour);
+                        }
                     }
                     else if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord - 1)
                     {
                         list.Add(new int[] { ycoord + 1, xcoord - 1 });
+                        if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                        {
+                            pieces[0].Check(!colour);
+                        }
                     }
                 }
                 else if (p.ReturnColour() != colour && colour == false)
@@ -511,10 +675,18 @@ namespace Chess
                     if (p.ReturnCoords()[0] == ycoord - 1 && p.ReturnCoords()[1] == xcoord + 1)
                     {
                         list.Add(new int[] { ycoord - 1, xcoord + 1 });
+                        if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                        {
+                            pieces[0].Check(!colour);
+                        }
                     }
                     else if (p.ReturnCoords()[0] == ycoord - 1 && p.ReturnCoords()[1] == xcoord - 1)
                     {
                         list.Add(new int[] { ycoord - 1, xcoord - 1 });
+                        if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                        {
+                            pieces[0].Check(!colour);
+                        }
                     }
                 }
             }
@@ -577,6 +749,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == xcoord && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, xcoord });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -592,6 +768,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == xcoord && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, xcoord });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -607,6 +787,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -622,6 +806,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -657,6 +845,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord - 2 && p.ReturnCoords()[1] == xcoord - 1 && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord - 2, xcoord - 1 });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                 }
@@ -674,6 +866,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord - 2 && p.ReturnCoords()[1] == xcoord + 1 && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord - 2, xcoord + 1 });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                 }
@@ -691,6 +887,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord - 1 && p.ReturnCoords()[1] == xcoord - 2 && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord - 1, xcoord - 2 });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                 }
@@ -708,6 +908,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord - 1 && p.ReturnCoords()[1] == xcoord + 2 && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord - 1, xcoord + 2 });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                 }
@@ -725,6 +929,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord + 2 && p.ReturnCoords()[1] == xcoord - 1 && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord + 2, xcoord - 1 });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                 }
@@ -742,6 +950,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord + 2 && p.ReturnCoords()[1] == xcoord + 1 && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord + 2, xcoord + 1 });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                 }
@@ -759,6 +971,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord - 2 && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord + 1, xcoord - 2 });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                 }
@@ -776,6 +992,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord + 2 && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord + 1, xcoord + 2 });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                 }
@@ -810,6 +1030,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -831,6 +1055,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -852,6 +1080,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -873,6 +1105,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -883,7 +1119,7 @@ namespace Chess
             return list;
         }
     }
-    class King : Pieces // Check, Checkmate
+    class King : Pieces // Checkmate
     {
         private bool hasmoved = false;
         public King(int inycoord, int inxcoord, bool incolour) : base(inycoord, inxcoord, incolour)
@@ -893,6 +1129,10 @@ namespace Chess
         public override void Moved()
         {
             hasmoved = true;
+        }
+        public override void UnMoved()
+        {
+            hasmoved = false;
         }
         public override char ReturnType()
         {
@@ -996,9 +1236,9 @@ namespace Chess
                 {
                     foreach (Pieces p in pieces)
                     {
-                        if (p.ReturnCoords()[0] == ycoord - 1 && p.ReturnCoords()[1] == xcoord - 1 && colour != p.ReturnColour())
+                        if (p.ReturnCoords()[0] == ycoord + 1 && p.ReturnCoords()[1] == xcoord - 1 && colour != p.ReturnColour())
                         {
-                            list.Add(new int[] { ycoord - 1, xcoord - 1 });
+                            list.Add(new int[] { ycoord + 1, xcoord - 1 });
                         }
                     }
                 }
@@ -1037,7 +1277,7 @@ namespace Chess
                     }
                 }
             }
-            if (!hasmoved)
+            if (!hasmoved && !pieces[0].ReturnFCheck(colour))
             {
                 if (board[ycoord, xcoord + 1] == '_' && board[ycoord, xcoord + 2] == '_')
                 {
@@ -1085,6 +1325,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == i && p.ReturnCoords()[1] == xcoord && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { i, xcoord });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -1100,6 +1344,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == i && p.ReturnCoords()[1] == xcoord && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { i, xcoord });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -1115,6 +1363,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -1130,6 +1382,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == ycoord && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { ycoord, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -1150,6 +1406,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -1171,6 +1431,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -1192,6 +1456,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
@@ -1213,6 +1481,10 @@ namespace Chess
                         if (p.ReturnCoords()[0] == y && p.ReturnCoords()[1] == x && colour != p.ReturnColour())
                         {
                             list.Add(new int[] { y, x });
+                            if (p.ReturnType() == 'K' && p.ReturnColour() != colour)
+                            {
+                                pieces[0].Check(!colour);
+                            }
                         }
                     }
                     break;
