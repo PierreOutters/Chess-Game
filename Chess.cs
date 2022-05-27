@@ -313,6 +313,15 @@ namespace Chess
                     return true;
                 }
             }
+            else
+            {
+                if (CheckCheckMate(board, pieces, colour))
+                {
+                    Console.WriteLine(colour + " has no legal moves");
+                    pieces[0].Stalemate();
+                    return true;
+                }
+            }
             if (wcheck)
             {
                 Console.WriteLine("White king is in check");
@@ -440,7 +449,7 @@ namespace Chess
                         success = EnterMove(board, pieces, false);
                     }
                     Console.Clear();
-                    if (pieces[0].ReturnCheckMate())
+                    if (pieces[0].ReturnCheckMate() || pieces[0].ReturnStalemate())
                     {
                         break;
                     }
@@ -457,7 +466,7 @@ namespace Chess
                         success = EnterMove(board, pieces, true);
                     }
                     Console.Clear();
-                    if (pieces[0].ReturnCheckMate())
+                    if (pieces[0].ReturnCheckMate() || pieces[0].ReturnStalemate())
                     {
                         break;
                     }
@@ -475,7 +484,7 @@ namespace Chess
         protected bool alive = true;
         protected bool colour; //false for white, true for black
         protected bool wcheck, bcheck;
-        protected bool checkmate;
+        protected bool checkmate, stalemate;
         protected bool fwcheck, fbcheck;
         public Pieces(int inycoord, int inxcoord, bool incolour)
         {
@@ -511,12 +520,18 @@ namespace Chess
                 fwcheck = true;
             }
         }
+        public void Stalemate()
+        {
+            Console.WriteLine("The game ended on a draw");
+            Console.WriteLine("Press enter to play another game");
+            Console.ReadKey(true);
+            stalemate = true;
+        }
         public void CheckMate(bool colour)
         {
             if (colour)
             {
                 Console.WriteLine("Black has won the game");
-                Console.ReadKey(true);
             }
             else
             {
@@ -525,6 +540,10 @@ namespace Chess
             Console.WriteLine("Press enter to play another game");
             checkmate = true;
             Console.ReadKey(true);
+        }
+        public bool ReturnStalemate()
+        {
+            return stalemate;
         }
         public bool ReturnCheckMate()
         {
