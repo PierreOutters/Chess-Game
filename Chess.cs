@@ -222,7 +222,6 @@ namespace Chess
             }
             if (CheckCheck(board, pieces, colour))
             {
-                Console.WriteLine("King is in check");
                 board[available0, available1] = '_';
                 board[ycoord, xcoord] = pieces[i].ReturnType();
                 pieces[i].ChangeToCoord(ycoord, xcoord);
@@ -430,51 +429,194 @@ namespace Chess
             }
             return true;
         } // Finished
+        static void Choices(char[,] board, List<Pieces> pieces)
+        {
+            start:
+            Console.Clear();
+            int choice;
+            string str = "Choose your difficulty" +
+                "\nPlease enter the number corresponding to the game mode you want to play\n" +
+                "   1) To play Player VS Player game\n   2) To play PLayer versus AI (Unfinished)\n   3) To play different game modes (In progress)\n   9) To Exit";
+            Console.WriteLine(str);
+            while (!int.TryParse(Console.ReadLine(), out choice) || choice <= 0 || choice > 3 && choice != 9)
+            {
+                Console.Clear();
+                Console.WriteLine(str);
+                Console.WriteLine("Invalid input");
+            }
+            if (choice == 9)
+            {
+                Environment.Exit(0);
+            }
+            else if (choice == 1)
+            {
+                PlayerVPlayer(board, pieces);
+            }
+            else if (choice == 2)
+            {
+                AIChoice(board, pieces);
+            }
+            else if (choice == 3)
+            {
+                Console.Clear();
+                Console.WriteLine(str);
+                Console.WriteLine("I said it was in progress");
+                Console.ReadKey(true);
+                goto start;
+            }
+        }
+        static void AIChoice(char[,] board, List<Pieces> pieces)
+        {
+            start:
+            Console.Clear();
+            int choice;
+            string str = "Choose your difficulty" +
+                "\nPlease enter the number corresponding to the difficulty of the ai you want to play at\n" +
+                "   1) Very easy\n   2) Medium (In progress)\n   3) Hard (In progress)\n   4) Very hard (In progress)\n   9) Go back";
+            Console.WriteLine(str);
+            while (!int.TryParse(Console.ReadLine(), out choice) || choice <= 0 || choice > 4 && choice != 9)
+            {
+                Console.Clear();
+                Console.WriteLine(str);
+                Console.WriteLine("Invalid input");
+            }
+            if (choice == 9)
+            {
+            }
+            else if (choice == 1)
+            {
+                VeryEasyAI(board, pieces);
+            }
+            else if (choice == 2)
+            {
+                Console.Clear();
+                Console.WriteLine(str);
+                Console.WriteLine("I said it was in progress");
+                Console.ReadKey(true);
+                goto start;
+            }
+            else if (choice == 3)
+            {
+                Console.Clear();
+                Console.WriteLine(str);
+                Console.WriteLine("I said it was in progress");
+                Console.ReadKey(true);
+                goto start;
+            }
+            else if (choice == 4)
+            {
+                Console.Clear();
+                Console.WriteLine(str);
+                Console.WriteLine("I said it was in progress");
+                Console.ReadKey(true);
+                goto start;
+            }
+        }
+        static void PlayerVPlayer(char[,] board, List<Pieces> pieces)
+        {
+            Console.Clear();
+            bool success;
+            PrintBoard(board, pieces);
+            while (true)
+            {
+                success = EnterMove(board, pieces, false);
+                while (!success)
+                {
+                    Console.Clear();
+                    PrintBoard(board, pieces);
+                    Console.WriteLine("Invalid move try again");
+                    success = EnterMove(board, pieces, false);
+                }
+                Console.Clear();
+                if (pieces[0].ReturnCheckMate() || pieces[0].ReturnStalemate())
+                {
+                    break;
+                }
+                PrintBoard(board, pieces);
+                Console.ReadKey(true);
+                Console.Clear();
+                PrintFlippedBoard(board, pieces);
+                success = EnterMove(board, pieces, true);
+                while (!success)
+                {
+                    Console.Clear();
+                    PrintFlippedBoard(board, pieces);
+                    Console.WriteLine("Invalid move try again");
+                    success = EnterMove(board, pieces, true);
+                }
+                Console.Clear();
+                if (pieces[0].ReturnCheckMate() || pieces[0].ReturnStalemate())
+                {
+                    break;
+                }
+                PrintFlippedBoard(board, pieces);
+                Console.ReadKey(true);
+                Console.Clear();
+                PrintBoard(board, pieces);
+            }
+        }
+        static void VeryEasyAI(char[,] board, List<Pieces> pieces)
+        {
+            Console.Clear();
+            bool success;
+            PrintBoard(board, pieces);
+            while (true)
+            {
+                success = EnterMove(board, pieces, false);
+                while (!success)
+                {
+                    Console.Clear();
+                    PrintBoard(board, pieces);
+                    Console.WriteLine("Invalid move try again");
+                    success = EnterMove(board, pieces, false);
+                }
+                Console.Clear();
+                if (pieces[0].ReturnCheckMate() || pieces[0].ReturnStalemate())
+                {
+                    break;
+                }
+                PrintBoard(board, pieces);
+                VeryEasyAIMove(board, pieces);
+                if (pieces[0].ReturnCheckMate() || pieces[0].ReturnStalemate())
+                {
+                    PrintFlippedBoard(board, pieces);
+                    break;
+                }
+                Console.Clear();
+                PrintBoard(board, pieces);
+            }
+        }
+        static void VeryEasyAIMove(char[,] board, List<Pieces> pieces)
+        {
+            int[] move = { 0, 0 };
+            char piece = 'p';
+            while (!MakeMove(board, pieces, move, piece, true))
+            {
+                Random random = new Random();
+                int rnd = random.Next(0, 6);
+                if (rnd == 0)
+                    piece = 'p';
+                else if (rnd == 1)
+                    piece = 'R';
+                else if (rnd == 2)
+                    piece = 'k';
+                else if (rnd == 3)
+                    piece = 'B';
+                else if (rnd == 4)
+                    piece = 'K';
+                else if (rnd == 5)
+                    piece = 'Q';
+                move[0] = random.Next(0,8);
+                move[1] = random.Next(0, 8);
+            }
+        }
         static void Main()
         {
             while (true)
             {
                 char[,] board = CreateBoard();
                 List<Pieces> pieces = SetupPieces(board);
-                bool success;
-                PrintBoard(board, pieces);
-                while (true)
-                {
-                    success = EnterMove(board, pieces, false);
-                    while (!success)
-                    {
-                        Console.Clear();
-                        PrintBoard(board, pieces);
-                        Console.WriteLine("Invalid move try again");
-                        success = EnterMove(board, pieces, false);
-                    }
-                    Console.Clear();
-                    if (pieces[0].ReturnCheckMate() || pieces[0].ReturnStalemate())
-                    {
-                        break;
-                    }
-                    PrintBoard(board, pieces);
-                    Console.ReadKey(true);
-                    Console.Clear();
-                    PrintFlippedBoard(board, pieces);
-                    success = EnterMove(board, pieces, true);
-                    while (!success)
-                    {
-                        Console.Clear();
-                        PrintFlippedBoard(board, pieces);
-                        Console.WriteLine("Invalid move try again");
-                        success = EnterMove(board, pieces, true);
-                    }
-                    Console.Clear();
-                    if (pieces[0].ReturnCheckMate() || pieces[0].ReturnStalemate())
-                    {
-                        break;
-                    }
-                    PrintFlippedBoard(board, pieces);
-                    Console.ReadKey(true);
-                    Console.Clear();
-                    PrintBoard(board, pieces);
-                }
+                Choices(board, pieces);
             }
         } // Main
     }
